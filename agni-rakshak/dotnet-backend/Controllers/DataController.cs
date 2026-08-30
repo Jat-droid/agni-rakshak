@@ -1,3 +1,4 @@
+using AgniRakshak.Api.Data;
 using AgniRakshak.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,47 +8,44 @@ namespace AgniRakshak.Api.Controllers;
 [Route("api")]
 public class DataController : ControllerBase
 {
-    // In a real system these three would come from a database / config table.
-    // Kept as static seed data here so the frontend has something real to render.
+    private readonly AppDbContext _db;
 
-    [HttpGet("network/nodes")]
-    public IActionResult GetNodes() => Ok(new List<FarmerNode>
+    public DataController(AppDbContext db)
     {
-        new("RK", "Ramesh Kumar", "Plot 12 · North Field", "+91 98765 43210", "ONLINE"),
-        new("SP", "Suresh Patil",  "Plot 07 · East Field",  "+91 91234 56789", "ONLINE"),
-        new("AV", "Anita Verma",  "Plot 19 · South Field", "+91 99887 76655", "ONLINE"),
-        new("MJ", "Manoj Jadhav", "Plot 03 · West Field",  "+91 90909 80808", "ONLINE"),
-    });
+        _db = db;
+    }
 
     [HttpGet("settings/dispatch")]
     public IActionResult GetDispatchSettings() => Ok(
-        new DispatchSettings("Station 42 — Sector B HQ", "+91 100", "+91 98220 11442", "~9 minutes"));
+        new DispatchSettings("Station 42 — Sector B Regional HQ", "+91 100", "+91 98220 11442", "~7.5 minutes"));
 
     [HttpGet("subscription/plans")]
     public IActionResult GetPlans() => Ok(new List<PricingPlan>
     {
-        new("Basic", "₹999", "/ month", false, new List<string>
+        new("Basic Farm Guard", "₹999", "/ month", false, new List<string>
         {
-            "1 thermal tower node",
-            "Up to 5 farms covered",
-            "SMS alerts only",
-            "24h log retention",
+            "1 Edge AI Tower Pod (Sector B)",
+            "Up to 5 farm plots covered",
+            "Direct Multi-dialect SMS Alerts",
+            "24-hour incident log retention",
+            "Standard Rothermel plume estimate"
         }),
-        new("Pro", "₹3,499", "/ month", true, new List<string>
+        new("Pro Agro-Shield", "₹3,499", "/ month", true, new List<string>
         {
-            "Up to 3 thermal tower nodes",
-            "Up to 15 farms covered",
-            "SMS + call + siren alerts",
-            "30-day log retention",
-            "Live dashboard access",
+            "Up to 3 Thermal AI Tower Nodes",
+            "Up to 25 farm plots & livestock tracking",
+            "Autonomous Solenoid Sprinkler Relay Trigger",
+            "Automated Multi-Dialect IVR Voice Dispatch",
+            "30-day SHA-256 Chained Forensics Log",
+            "Real-time SignalR GIS Command Console"
         }),
-        new("Enterprise", "Custom", "", false, new List<string>
+        new("District Enterprise", "Custom", "", false, new List<string>
         {
-            "Unlimited tower nodes",
-            "District-wide coverage",
-            "Direct fire-brigade integration",
-            "1-year log retention",
-            "Dedicated support engineer",
+            "Unlimited Tower Pods & LoRa Mesh Relays",
+            "District-wide Cadastral GIS Integration",
+            "Direct Fire Brigade & SDMA Hotline Link",
+            "Cryptographic Insurance Forensics Audit Reports",
+            "24/7 Dedicated Remote Response Engineer"
         }),
     });
 }

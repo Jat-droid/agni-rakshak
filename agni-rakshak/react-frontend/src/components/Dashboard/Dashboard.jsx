@@ -1,36 +1,37 @@
-import { useEffect, useRef } from "react";
-import useStatusPolling from "../../hooks/useStatusPolling";
+import { useEffect, useRef, useState } from "react";
 import VideoMonitor from "./VideoMonitor";
 import ControlStatus from "./ControlStatus";
-import AIInsights from "./AIInsights";
+import TelemetryAnalytics from "./TelemetryAnalytics";
+import TacticalMap from "../GIS/TacticalMap";
+import { getNetworkNodes } from "../../api/client";
 
-// Node telemetry isn't produced by the detector — kept as static placeholders
-// here, same as the original hard-coded markup. Wire to a real endpoint
-// (e.g. /api/telemetry) when the hardware team exposes it.
-const TELEMETRY = { uptime: 98, signal: 87, battery: 73 };
-
-export default function Dashboard() {
-  const { status } = useStatusPolling(1000);
+export default function Dashboard({ status, propagation, isConnected, latencyMs, lang = "en" }) {
+  const isFire = !!status?.isFire;
   const sirenRef = useRef(null);
   const sirenPlayingRef = useRef(false);
+  const [nodes, setNodes] = useState([]);
 
   useEffect(() => {
-    document.body.classList.toggle("global-alert", !!status.isFire);
+    getNetworkNodes().then(setNodes).catch(() => {});
+  }, [propagation]);
+
+  useEffect(() => {
+    document.body.classList.toggle("global-alert", isFire);
 
     const audio = sirenRef.current;
     if (!audio) return;
 
-    if (status.isFire && !sirenPlayingRef.current) {
+    if (isFire && !sirenPlayingRef.current) {
       audio.play().catch((err) => console.warn("Siren autoplay blocked:", err));
       sirenPlayingRef.current = true;
-    } else if (!status.isFire && sirenPlayingRef.current) {
+    } else if (!isFire && sirenPlayingRef.current) {
       audio.pause();
       audio.currentTime = 0;
       sirenPlayingRef.current = false;
     }
 
     return () => document.body.classList.remove("global-alert");
-  }, [status.isFire]);
+  }, [isFire]);
 
   return (
     <>
@@ -38,10 +39,22 @@ export default function Dashboard() {
         <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg" />
       </audio>
 
-      <div className="dashboard-grid">
-        <VideoMonitor status={status} />
-        <ControlStatus status={status} />
-        <AIInsights status={status} telemetry={TELEMETRY} />
+      <div className="dashboard-grid-master">
+        {/* Row 1: Dual-Spectrum Video + Real-Time Control Terminal */}
+        <div className="dash-row-top">
+          <VideoMonitor status={status} latencyMs={latencyMs} />
+          <ControlStatus status={status} isConnected={isConnected} latencyMs={latencyMs} lang={lang} />
+        </div>
+
+        {/* Row 2: Tactical GIS Map (Full Sector B Cadastral Grid & Plume) */}
+        <div className="dash-row-mid">
+          <TacticalMap nodes={nodes} propagation={propagation} status={status} lang={lang} />
+        </div>
+
+        {/* Row 3: Multi-Modal Sensor Fusion & Recharts Live Analytics */}
+        <div className="dash-row-bottom">
+          <TelemetryAnalytics status={status} lang={lang} />
+        </div>
       </div>
     </>
   );

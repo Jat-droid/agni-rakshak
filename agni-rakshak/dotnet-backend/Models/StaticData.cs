@@ -1,7 +1,5 @@
 namespace AgniRakshak.Api.Models;
 
-public record FarmerNode(string Initials, string Name, string Plot, string Phone, string Status);
-
 public record DispatchSettings(
     string Station,
     string PrimaryLine,
