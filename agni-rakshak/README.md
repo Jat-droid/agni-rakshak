@@ -1,65 +1,92 @@
-# AGNI-RAKSHAK — React + .NET + Python (OpenCV) edition
+# AGNI-RAKSHAK — Enterprise Multi-Modal Wildfire & Crop Defense System
 
-The single Flask+HTML app is split into three independent services:
-
-```
-python-ai/        OpenCV detection worker — reads the camera, scores frames
-                   for fire/smoke, pushes results to the .NET API.
-dotnet-backend/    ASP.NET Core Web API — receives data from python-ai,
-                   exposes REST endpoints + an MJPEG stream for the UI.
-react-frontend/    Vite + React dashboard — same look as the original HTML,
-                   now data-driven by the .NET API.
-```
-
-## Data flow
+AGNI-RAKSHAK is a 3-tier distributed edge-intelligence system designed for real-time fire detection, cadastral risk mapping, and autonomous emergency actuation.
 
 ```
-[OpenCV worker] --POST status/frame--> [.NET API] <--GET /api/*-- [React app]
-   fire_detector.py        api/ingest/*      api/status, /api/video_feed, ...
+[ CCTV / Drone / RTSP Stream ]
+              │
+              ▼
+   [ python-ai ] (YOLOv8 Edge Engine + Spatio-Temporal Fourier Fusion)
+              │  HTTP POST /api/ingest/*
+              ▼
+   [ dotnet-backend ] (ASP.NET Core 8 Web API + SignalR + SQLite)
+              │  REST /api/* & WebSockets /hubs/fire
+              ▼
+   [ react-frontend ] (Vite + React Dashboard served by Nginx)
 ```
 
-The Python script never talks to the browser directly — everything goes
-through the .NET backend, which is the single source of truth (`FireState`).
+---
 
-## Run it
+## 🚀 Quick Deployment with Docker Compose (Production Ready)
 
-**1. Backend (.NET 8)**
+### 1. Configure Environment (Optional)
+Copy the template and set your RTSP IP Camera stream and Telegram credentials:
+```bash
+cp .env.example .env
+```
+
+### 2. Build & Launch Containers
+```bash
+docker compose up --build -d
+```
+
+* **Dashboard Web UI**: `http://localhost` (or your server's IP address)
+* **Backend API & SignalR Hub**: `http://localhost:5080`
+* **Real-time MJPEG Stream**: `http://localhost/api/video_feed`
+
+To view container logs:
+```bash
+docker compose logs -f
+```
+
+To stop:
+```bash
+docker compose down
+```
+
+---
+
+## 🛠️ Local Development Setup (Run Without Docker)
+
+### 1. ASP.NET Core Backend
 ```bash
 cd dotnet-backend
 dotnet run
 # -> listening on http://localhost:5080
 ```
 
-**2. AI worker (Python)**
-```bash
-cd python-ai
-pip install -r requirements.txt
-python fire_detector.py
-# Uses webcam 0 by default. Point it at a video file/RTSP feed instead:
-# VIDEO_SOURCE=/path/to/test_fire.mp4 python fire_detector.py
-```
-
-**3. Frontend (React)**
+### 2. React + Vite Frontend
 ```bash
 cd react-frontend
 npm install
 npm run dev
-# -> http://localhost:5173 (Vite proxies /api to the .NET backend)
+# -> listening on http://localhost:5173 (proxies /api to http://localhost:5080)
 ```
 
-## Notes / next steps
+### 3. Python AI Worker (OpenCV + YOLOv8)
+```bash
+cd python-ai
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
 
-- **Detection model**: `fire_detector.py` ships with a colour-heuristic (HSV)
-  detector so the pipeline runs end-to-end out of the box. Swap
-  `detect_fire()` for a real trained model (ONNX/TensorRT/.pt) without
-  touching any networking code — that function is the only seam.
-- **Video feed**: `/api/video_feed` is a true `multipart/x-mixed-replace`
-  MJPEG stream from .NET, so the React `<img>` tag just works, same as the
-  old Flask behaviour.
-- **Scaling out**: `FireState` is an in-memory singleton, fine for one
-  backend instance. If you ever run multiple API instances behind a load
-  balancer, move this to Redis (or add a SignalR backplane) so all
-  instances see the same latest frame/status.
-- **Telemetry rings** (uptime/signal/battery) are still static placeholders,
-  same as the original markup — wire them to a real `/api/telemetry`
-  endpoint once the hardware team exposes that data.
+pip install -r requirements.txt
+python fire_detector.py
+```
+
+---
+
+## 🎥 Camera / Video Stream Configuration
+
+In `python-ai/.env` (or via environment variables):
+* **Local USB/Built-in Webcam**: `VIDEO_SOURCE=0`
+* **CCTV / RTSP IP Camera**: `VIDEO_SOURCE=rtsp://admin:password@192.168.1.100:554/stream`
+* **Video File Benchmark**: `VIDEO_SOURCE=test_wildfire.mp4`
+
+---
+
+## 🔒 Security & Data Persistence
+* **SQLite Database**: `agnirakshak.db` contains seeded farmer cadastral profiles and forensic incident logs. In Docker, it is automatically mounted to a persistent volume `backend-sqlite-data`.
+* **CORS**: ASP.NET Core is pre-configured to support local development and reverse-proxied production environments.

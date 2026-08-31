@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. ASP.NET Core 8/10 Web API Backend + SignalR Engine
+  # ----------------------------------------------------------------------------
+  dotnet-backend:
+    build:
+      context: ./dotnet-backend
+      dockerfile: Dockerfile
+    container_name: agni-backend
+    restart: unless-stopped
+    ports:
+      - "5080:5080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5080
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/agnirakshak.db
+    volumes:
+      - backend-sqlite-data:/app/data
+    networks:
+      - agni-network
+
+  # ----------------------------------------------------------------------------
+  # 2. React + Vite Dashboard (Served via Nginx Reverse Proxy)
+  # ----------------------------------------------------------------------------
+  react-frontend:
+    build:
+      context: ./react-frontend
+      dockerfile: Dockerfile
+    container_name: agni-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - dotnet-backend
+    networks:
+      - agni-network
+
+  # ----------------------------------------------------------------------------
+  # 3. Python YOLOv8 Edge Vision & Sensor Fusion Ingestion Engine
+  # ----------------------------------------------------------------------------
+  python-ai:
+    build:
+      context: ./python-ai
+      dockerfile: Dockerfile
+    container_name: agni-ai
+    restart: unless-stopped
+    environment:
+      - BACKEND_URL=http://dotnet-backend:5080
+      - VIDEO_SOURCE=${VIDEO_SOURCE:-0}
+      - SEND_INTERVAL_SEC=0.4
+      - JPEG_QUALITY=80
+      - YOLO_MODEL_PATH=yolov8n-fire.pt
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - ALERT_COOLDOWN_SEC=60
+    depends_on:
+      - dotnet-backend
+    networks:
+      - agni-network
+
+volumes:
+  backend-sqlite-data:
+    driver: local
+
+networks:
+  agni-network:
+    driver: bridge

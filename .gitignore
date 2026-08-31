@@ -26,3 +26,7 @@
 **/*.suo
 **/*.user
 **/appsettings.Development.json
+**/*.db
+**/*.db-shm
+**/*.db-wal
+*.log
