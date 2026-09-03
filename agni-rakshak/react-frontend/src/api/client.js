@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: "/api" });
+const PROD_URL = "https://agni-rakshak-2.onrender.com";
+const API_BASE = import.meta.env.DEV ? "/api" : `${PROD_URL}/api`;
+const api = axios.create({ baseURL: API_BASE });
 
 export const getStatus = () => api.get("/status").then((r) => r.data);
 export const getLatestTelemetry = () => api.get("/telemetry/latest").then((r) => r.data);
@@ -30,6 +32,6 @@ export const getDispatchSettings = () => api.get("/settings/dispatch").then((r) 
 export const getSubscriptionPlans = () => api.get("/subscription/plans").then((r) => r.data);
 
 // MJPEG stream for <img src=...>
-export const videoFeedUrl = import.meta.env.DEV ? "http://localhost:5080/api/video_feed" : "/api/video_feed";
+export const videoFeedUrl = import.meta.env.DEV ? "http://localhost:5080/api/video_feed" : `${PROD_URL}/api/video_feed`;
 
 export default api;

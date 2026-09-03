@@ -52,7 +52,8 @@ export default function useSignalR() {
     getActuationStatus().then(setActuation).catch(() => {});
 
     // Determine SignalR Hub URL (direct localhost:5080 in dev or /hubs/fire)
-    const hubUrl = import.meta.env.DEV ? "http://localhost:5080/hubs/fire" : "/hubs/fire";
+    const PROD_URL = "https://agni-rakshak-2.onrender.com";
+    const hubUrl = import.meta.env.DEV ? "http://localhost:5080/hubs/fire" : `${PROD_URL}/hubs/fire`;
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
