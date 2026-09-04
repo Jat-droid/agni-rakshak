@@ -34,10 +34,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Ensure SQLite database & seed records are created on startup
+// Ensure SQLite database & seed records are recreated on startup to apply seed changes
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureDeleted(); // Wipes the DB to allow fresh seeding of the 1 farmer
     db.Database.EnsureCreated();
 }
 
