@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.Http.Json;
 using AgniRakshak.Api.Data;
 using AgniRakshak.Api.Hubs;
 using AgniRakshak.Api.Models;
@@ -13,15 +14,21 @@ public class EmergencyDispatchService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IHubContext<FireHub> _hubContext;
     private readonly ILogger<EmergencyDispatchService> _logger;
+    private readonly IConfiguration _config;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public EmergencyDispatchService(
         IServiceScopeFactory scopeFactory,
         IHubContext<FireHub> hubContext,
-        ILogger<EmergencyDispatchService> logger)
+        ILogger<EmergencyDispatchService> logger,
+        IConfiguration config,
+        IHttpClientFactory httpClientFactory)
     {
         _scopeFactory = scopeFactory;
         _hubContext = hubContext;
         _logger = logger;
+        _config = config;
+        _httpClientFactory = httpClientFactory;
     }
 
     /// <summary>
@@ -58,6 +65,11 @@ public class EmergencyDispatchService
             string localizedMessage = GenerateLocalizedDispatchScript(node, rateOfSpread, windDirection);
             _logger.LogWarning("🚨 EMERGENCY DISPATCH QUEUED for {Name} ({Phone}) [{Language}]: {Message}",
                 node.Name, node.Phone, node.LanguagePreference, localizedMessage);
+
+            if (node.RiskStatus == "CRITICAL_EVACUATE")
+            {
+                await TriggerIvrCallAsync(node.Phone, localizedMessage);
+            }
 
             // Log actuation record
             db.ActuationLogs.Add(new ActuationRecord
@@ -103,6 +115,48 @@ public class EmergencyDispatchService
         await _hubContext.Clients.All.SendAsync("ReceiveActuationState", record);
 
         return record;
+    }
+
+    private async Task TriggerIvrCallAsync(string phone, string message)
+    {
+        try
+        {
+            string apiUrl = _config["IvrSettings:ApiUrl"] ?? "";
+            string apiToken = _config["IvrSettings:ApiToken"] ?? "";
+            string didNumber = _config["IvrSettings:DidNumber"] ?? "";
+
+            if (string.IsNullOrEmpty(apiUrl) || apiToken == "YOUR_API_TOKEN_HERE")
+            {
+                _logger.LogWarning("IVR API not configured. Skipping automated call to {Phone}.", phone);
+                return;
+            }
+
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiToken}");
+
+            var payload = new
+            {
+                phone_number = phone,
+                text = message,
+                did = didNumber
+            };
+
+            var response = await client.PostAsJsonAsync(apiUrl, payload);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("✅ IVR call successfully initiated to {Phone}", phone);
+            }
+            else
+            {
+                string error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("❌ Failed to initiate IVR call to {Phone}. Status: {Status}. Error: {Error}", phone, response.StatusCode, error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while triggering IVR call to {Phone}", phone);
+        }
     }
 
     private static string GenerateLocalizedDispatchScript(FarmerNode node, double ros, double windDir)

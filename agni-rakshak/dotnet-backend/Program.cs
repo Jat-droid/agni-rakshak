@@ -19,6 +19,7 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<FireState>();
 builder.Services.AddSingleton<FirePropagationService>();
 builder.Services.AddScoped<EmergencyDispatchService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddControllers();
 
