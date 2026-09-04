@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DICTIONARY } from "../../utils/localization";
 import { toggleSprinklers, toggleSiren } from "../../api/client";
 
-export default function Sidebar({ onTabChange, status, isConnected, lang = "en" }) {
+export default function Sidebar({ onTabChange, status, isConnected, lang = "en", isOpen, onClose }) {
   const t = DICTIONARY[lang] || DICTIONARY.en;
   const [sprinklersOn, setSprinklersOn] = useState(false);
   const [sirenOn, setSirenOn] = useState(false);
