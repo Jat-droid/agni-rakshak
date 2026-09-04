@@ -8,6 +8,8 @@ export default function TopNav({
   onLanguageChange,
   theme,
   onThemeToggle,
+  onToggleSidebar,
+  isSidebarOpen,
 }) {
   const t = DICTIONARY[lang] || DICTIONARY.en;
 
@@ -24,6 +26,9 @@ export default function TopNav({
   return (
     <nav className="topnav">
       <div className="brand">
+        <button className="mobile-menu-btn" onClick={onToggleSidebar} aria-label="Toggle Menu">
+          {isSidebarOpen ? "✕" : "☰"}
+        </button>
         <div className="brand-mark">🔥</div>
         <div className="brand-text">
           <h1>

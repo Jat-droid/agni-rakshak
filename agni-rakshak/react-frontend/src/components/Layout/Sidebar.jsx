@@ -43,7 +43,10 @@ export default function Sidebar({ onTabChange, status, isConnected, lang = "en" 
   else if (threatLevel === "ELEVATED") threatColor = "var(--accent-yellow)";
 
   return (
-    <aside className="sidebar">
+    <>
+      {/* Mobile overlay backdrop */}
+      {isOpen && <div className="sidebar-overlay" onClick={onClose}></div>}
+      <aside className={`sidebar ${isOpen ? "sidebar-mobile-open" : ""}`}>
       {/* 1. Tactical Mission State */}
       <div className="card side-card">
         <p className="side-title">Grid Intelligence</p>
@@ -128,5 +131,6 @@ export default function Sidebar({ onTabChange, status, isConnected, lang = "en" 
         </button>
       </div>
     </aside>
+    </>
   );
 }

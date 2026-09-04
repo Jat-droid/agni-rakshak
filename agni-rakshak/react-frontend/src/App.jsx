@@ -19,6 +19,7 @@ export default function App() {
     return localStorage.getItem("agni_theme") || "dark";
   });
   const [nodes, setNodes] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const { status, propagation, actuation, isConnected, latencyMs } = useSignalR();
   const t = DICTIONARY[lang] || DICTIONARY.en;
@@ -84,20 +85,27 @@ export default function App() {
     <div className={`app-container theme-${theme}`}>
       <TopNav
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setIsSidebarOpen(false); // Close sidebar on mobile after navigation
+        }}
         isConnected={isConnected}
         lang={lang}
         onLanguageChange={setLang}
         theme={theme}
         onThemeToggle={toggleTheme}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isSidebarOpen={isSidebarOpen}
       />
-      <div className="layout">
+      <div className={`layout ${isSidebarOpen ? "sidebar-open" : ""}`}>
         <Sidebar
           activeTab={activeTab}
           onTabChange={setActiveTab}
           status={status}
           isConnected={isConnected}
           lang={lang}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
         <main className="main-col">
           <header className="page-head">

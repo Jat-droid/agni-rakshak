@@ -1856,3 +1856,165 @@ body.global-alert {
 .btn-dispatch:hover {
   background: #b91c1c;
 }
+
+/* ==============================================================================
+   RESPONSIVE DESIGN OVERRIDES (Mobile / Tablet / PC)
+   ============================================================================== */
+
+/* Hamburger Button */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+}
+
+/* Base Mobile Overlay */
+.sidebar-overlay {
+  display: none;
+}
+
+/* ------------------------------------------------------------------------------
+   TABLET & SMALL LAPTOP (< 1200px)
+   ------------------------------------------------------------------------------ */
+@media (max-width: 1200px) {
+  /* Dashboard Grid collapses camera/feed and map horizontally to single column */
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  
+  /* Map panel in Dashboard becomes shorter */
+  .dashboard-grid > div:last-child {
+    min-height: 450px;
+  }
+  
+  /* Pricing grid changes from 3 to 2 columns */
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------------------
+   MOBILE & SMALL TABLET (< 850px)
+   ------------------------------------------------------------------------------ */
+@media (max-width: 850px) {
+  /* Layout Changes */
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hamburger Menu Visibility */
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  /* Top Navigation */
+  .topnav {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+  }
+
+  /* Make tabs horizontally scrollable */
+  .nav-links {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.5rem;
+    justify-content: flex-start;
+  }
+  
+  /* Hide scrollbar for cleaner look but keep it functional */
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .top-right-actions {
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  /* Sidebar styling for mobile (Hidden by default, slides in) */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    height: 100vh;
+    width: 280px;
+    z-index: 1000;
+    background: var(--bg-card);
+    transition: left 0.3s ease;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+    overflow-y: auto;
+  }
+  
+  .sidebar-mobile-open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Status Cards (Top of dashboard) */
+  .status-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Telemetry Grid */
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* GIS Map Layout Stack */
+  .gis-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 1rem;
+  }
+  
+  .gis-layout > div:first-child {
+    /* Put the incident intel panels FIRST on mobile */
+    order: 1;
+  }
+
+  .gis-layout > div:last-child {
+    /* Put map below the intel panels */
+    order: 2;
+    min-height: 400px;
+  }
+}
+
+/* ------------------------------------------------------------------------------
+   VERY SMALL PHONES (< 480px)
+   ------------------------------------------------------------------------------ */
+@media (max-width: 480px) {
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .nav-status-pill {
+    display: none; /* Hide SignalR pill to save space */
+  }
+
+  .brand-text h1 {
+    font-size: 1rem;
+  }
+}
