@@ -68,7 +68,7 @@ public class EmergencyDispatchService
 
             if (node.RiskStatus == "CRITICAL_EVACUATE")
             {
-                await TriggerIvrCallAsync(node.Phone, localizedMessage);
+                await TriggerIvrCallAsync(node);
             }
 
             // Log actuation record
@@ -117,47 +117,70 @@ public class EmergencyDispatchService
         return record;
     }
 
-    private async Task TriggerIvrCallAsync(string phone, string message)
+    private async Task TriggerIvrCallAsync(FarmerNode node)
     {
         try
         {
             string apiToken = _config["IvrSettings:ApiToken"] ?? "";
             string didNumber = _config["IvrSettings:DidNumber"] ?? "";
-            string extNo = "101"; // Default extension for C2C API
             
-            // Format phone number to 10 digits
-            string cleanPhone = phone.Replace("+", "").Replace(" ", "").Trim();
+            // Format phone number to 10 digits for IVR Solutions API
+            string cleanPhone = node.Phone.Replace("+", "").Replace(" ", "").Trim();
             if (cleanPhone.StartsWith("91") && cleanPhone.Length == 12) {
                 cleanPhone = cleanPhone.Substring(2);
+            }
+            if (cleanPhone.StartsWith("0") && cleanPhone.Length == 11) {
+                cleanPhone = cleanPhone.Substring(1);
             }
 
             if (string.IsNullOrEmpty(apiToken) || apiToken == "YOUR_API_TOKEN_HERE")
             {
-                _logger.LogWarning("IVR API not configured. Skipping automated call to {Phone}.", phone);
+                _logger.LogWarning("IVR API not configured. Skipping automated call to {Phone}.", node.Phone);
                 return;
             }
 
-            // IVR Solutions Click2Call (C2C) GET API Format
-            string apiUrl = $"https://meghbelaapi.ivrsolutions.in/api/c2c_get?token={apiToken}&did={didNumber}&ext_no={extNo}&phone={cleanPhone}";
+            // Map language to template name
+            string templateName = node.LanguagePreference switch
+            {
+                "Hindi" => "fire_alert_hindi",
+                "Punjabi" => "fire_alert_punjabi",
+                "Marathi" => "fire_alert_marathi",
+                _ => "fire_alert_hindi" // Default fallback
+            };
+
+            // Format Variables: {1} Name, {2} Plot, {3} Time, {4} Livestock
+            string variables = $"{node.Name},{node.PlotNumber},{node.TimeToImpactMinutes},{node.LivestockCount}";
+
+            string apiUrl = "https://api.ivrsolutions.in/api/dial_by_text";
             
-            _logger.LogInformation("Dispatching GET request to IVR API: {ApiUrl}", $"https://meghbelaapi.ivrsolutions.in/api/c2c_get?token=[REDACTED]&did={didNumber}&ext_no={extNo}&phone={cleanPhone}");
+            _logger.LogInformation("Dispatching POST request to {ApiUrl} for Template: {Template}", apiUrl, templateName);
 
             var client = _httpClientFactory.CreateClient();
-            var response = await client.GetAsync(apiUrl);
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiToken}");
+
+            var payload = new
+            {
+                did_no = didNumber,
+                customer_no = cleanPhone,
+                template_name = templateName,
+                Variable = variables
+            };
+
+            var response = await client.PostAsJsonAsync(apiUrl, payload);
             
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("✅ IVR call successfully initiated to {Phone}", phone);
+                _logger.LogInformation("✅ IVR call successfully initiated to {Phone} using template {Template}", node.Phone, templateName);
             }
             else
             {
                 string error = await response.Content.ReadAsStringAsync();
-                _logger.LogError("❌ Failed to initiate IVR call to {Phone}. Status: {Status}. Error: {Error}", phone, response.StatusCode, error);
+                _logger.LogError("❌ Failed to initiate IVR call to {Phone}. Status: {Status}. Error: {Error}", node.Phone, response.StatusCode, error);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception while triggering IVR call to {Phone}", phone);
+            _logger.LogError(ex, "Exception while triggering IVR call to {Phone}", node.Phone);
         }
     }
 
