@@ -13,7 +13,7 @@ public class StatusDto
     public double Humidity { get; set; } = 28.5;
     public double RateOfRise { get; set; } = 0.4; // ΔT/Δt in °C/min
     public double GasPpm { get; set; } = 42.0; // MQ-135 / MQ-2 reading
-    public double WindSpeed { get; set; } = 18.5; // km/h
+    public double WindSpeed { get; set; } = 1000.0; // km/h (Extreme wind for demo map coverage)
     public double WindDirection { get; set; } = 65.0; // Wind azimuth degrees
     public double FftFlickerHz { get; set; } = 9.8; // Flame flicker frequency (8-12 Hz for real flame)
     public double OpticalFlowScore { get; set; } = 0.88; // Upward smoke divergence index
