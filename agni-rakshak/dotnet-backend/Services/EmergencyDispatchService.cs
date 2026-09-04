@@ -121,27 +121,29 @@ public class EmergencyDispatchService
     {
         try
         {
-            string apiUrl = _config["IvrSettings:ApiUrl"] ?? "";
             string apiToken = _config["IvrSettings:ApiToken"] ?? "";
             string didNumber = _config["IvrSettings:DidNumber"] ?? "";
+            string extNo = "101"; // Default extension for C2C API
+            
+            // Format phone number to 10 digits
+            string cleanPhone = phone.Replace("+", "").Replace(" ", "").Trim();
+            if (cleanPhone.StartsWith("91") && cleanPhone.Length == 12) {
+                cleanPhone = cleanPhone.Substring(2);
+            }
 
-            if (string.IsNullOrEmpty(apiUrl) || apiToken == "YOUR_API_TOKEN_HERE")
+            if (string.IsNullOrEmpty(apiToken) || apiToken == "YOUR_API_TOKEN_HERE")
             {
                 _logger.LogWarning("IVR API not configured. Skipping automated call to {Phone}.", phone);
                 return;
             }
 
+            // IVR Solutions Click2Call (C2C) GET API Format
+            string apiUrl = $"https://meghbelaapi.ivrsolutions.in/api/c2c_get?token={apiToken}&did={didNumber}&ext_no={extNo}&phone={cleanPhone}";
+            
+            _logger.LogInformation("Dispatching GET request to IVR API: {ApiUrl}", $"https://meghbelaapi.ivrsolutions.in/api/c2c_get?token=[REDACTED]&did={didNumber}&ext_no={extNo}&phone={cleanPhone}");
+
             var client = _httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiToken}");
-
-            var payload = new
-            {
-                phone_number = phone,
-                text = message,
-                did = didNumber
-            };
-
-            var response = await client.PostAsJsonAsync(apiUrl, payload);
+            var response = await client.GetAsync(apiUrl);
             
             if (response.IsSuccessStatusCode)
             {
