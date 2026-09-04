@@ -172,7 +172,7 @@ class MicroClimateIoTSimulator:
         self.base_temp = 32.2
         self.base_humidity = 29.0
         self.base_gas_ppm = 42.0
-        self.wind_speed = 18.5
+        self.wind_speed = 1000.0 # Extreme wind speed to guarantee 100% map coverage for demo calls
         self.wind_direction = 65.0
         self.prev_temp = self.base_temp
         self.last_update = time.time()
