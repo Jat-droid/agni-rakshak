@@ -19,37 +19,18 @@ public class StatusController : ControllerBase
     [HttpGet("status")]
     public IActionResult GetStatus() => Ok(_state.Status);
 
-    // GET /api/video_feed -> multipart/x-mixed-replace MJPEG stream.
-    // A plain <img src="/api/video_feed"> in the browser renders this live,
-    // same behaviour as the old Flask endpoint — no extra JS needed.
-    [HttpGet("video_feed")]
-    public async Task VideoFeed(CancellationToken cancellationToken)
+    // GET /api/frame/latest -> returns the single latest JPEG frame.
+    // This is much more reliable behind cloud proxies than multipart/x-mixed-replace.
+    [HttpGet("frame/latest")]
+    public IActionResult GetLatestFrame()
     {
-        var response = Response;
-        response.ContentType = $"multipart/x-mixed-replace; boundary={Boundary}";
-
-        try
+        var frame = _state.LatestFrame;
+        if (frame == null)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var frame = _state.LatestFrame;
-                if (frame is not null)
-                {
-                    var header = $"--{Boundary}\r\nContent-Type: image/jpeg\r\nContent-Length: {frame.Length}\r\n\r\n";
-                    var headerBytes = System.Text.Encoding.ASCII.GetBytes(header);
-
-                    await response.Body.WriteAsync(headerBytes, cancellationToken);
-                    await response.Body.WriteAsync(frame, cancellationToken);
-                    await response.Body.WriteAsync(System.Text.Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
-                    await response.Body.FlushAsync(cancellationToken);
-                }
-
-                await Task.Delay(150, cancellationToken); // ~6-7 fps is plenty for a security feed
-            }
+            // Return a 404 or a transparent 1x1 pixel so the frontend doesn't hang.
+            return NotFound("No frame available currently.");
         }
-        catch (OperationCanceledException)
-        {
-            // Client disconnected / navigated away — expected, not an error.
-        }
+
+        return File(frame, "image/jpeg");
     }
 }

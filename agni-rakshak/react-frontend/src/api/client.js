@@ -31,7 +31,10 @@ export const deleteFarmerNode = (id) => api.delete(`/network/nodes/${id}`).then(
 export const getDispatchSettings = () => api.get("/settings/dispatch").then((r) => r.data);
 export const getSubscriptionPlans = () => api.get("/subscription/plans").then((r) => r.data);
 
-// MJPEG stream for <img src=...>
-export const videoFeedUrl = import.meta.env.DEV ? "http://localhost:5080/api/video_feed" : `${PROD_URL}/api/video_feed`;
+// Latest JPEG frame URL for polling
+export const getLatestFrameUrl = () => {
+  const baseUrl = import.meta.env.DEV ? "http://localhost:5080/api/frame/latest" : `${PROD_URL}/api/frame/latest`;
+  return `${baseUrl}?t=${Date.now()}`;
+};
 
 export default api;

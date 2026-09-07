@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { videoFeedUrl } from "../../api/client";
+import { useState, useEffect, useRef } from "react";
+import { getLatestFrameUrl } from "../../api/client";
 
 const PALETTES = [
   { id: "optical", label: "RGB Optical" },
@@ -12,7 +12,15 @@ export default function VideoMonitor({ status, latencyMs = 18 }) {
   const isFire = !!status?.isFire;
   const [activePalette, setActivePalette] = useState("inferno");
   const [snapshotMsg, setSnapshotMsg] = useState(null);
+  const [frameUrl, setFrameUrl] = useState(getLatestFrameUrl());
   const imgRef = useRef(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrameUrl(getLatestFrameUrl());
+    }, 500); // Poll every 500ms (2 FPS is enough for demo reliability)
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSnapshot = () => {
     setSnapshotMsg("📸 Forensic frame snapshot hashed & archived.");
@@ -63,7 +71,14 @@ export default function VideoMonitor({ status, latencyMs = 18 }) {
         {/* Center Target Reticle */}
         <div className="hud-reticle"></div>
 
-        <img ref={imgRef} src={videoFeedUrl} alt="Dual-spectrum security feed" className="feed-image" />
+        <img 
+          ref={imgRef} 
+          src={frameUrl} 
+          alt="Dual-spectrum security feed" 
+          className="feed-image" 
+          onError={(e) => { e.target.style.opacity = '0'; }} 
+          onLoad={(e) => { e.target.style.opacity = '1'; }} 
+        />
       </div>
 
       <div className="video-footer">
