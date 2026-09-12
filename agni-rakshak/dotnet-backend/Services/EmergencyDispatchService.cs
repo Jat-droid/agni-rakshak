@@ -148,8 +148,13 @@ public class EmergencyDispatchService
                 _ => "fire_alert_hindi" // Default fallback
             };
 
-            // Format Variables: {1} Name, {2} Plot, {3} Time, {4} Livestock
-            string variables = $"{node.Name},{node.PlotNumber},{node.TimeToImpactMinutes},{node.LivestockCount}";
+            // Create an anonymous object for the named variables
+            var templateVariables = new
+            {
+                farmer_name = node.Name,
+                plot_number = node.PlotNumber,
+                time_minutes = node.TimeToImpactMinutes.ToString()
+            };
 
             string apiUrl = "https://api.ivrsolutions.in/api/dial_by_text";
             
@@ -163,7 +168,7 @@ public class EmergencyDispatchService
                 did_no = didNumber,
                 customer_no = cleanPhone,
                 template_name = templateName,
-                Variable = variables
+                variables = templateVariables // Pass the JSON object here
             };
 
             var response = await client.PostAsJsonAsync(apiUrl, payload);
