@@ -87,7 +87,9 @@ public class FirePropagationService
             ForwardRateOfSpreadMPerMin = forwardRos,
             WindDirectionDegrees = windDirectionDegrees,
             WindSpeedKmH = windSpeedKmH,
-            PlumeAngleDegrees = Math.Max(30.0, 65.0 - (windSpeedKmH * 0.8)), // Faster wind narrows plume cone
+            // Widen the threat cone: even at extreme wind speeds, allow a 90-degree threat arc (45 deg on each side)
+            // to match the visual lateral spread of the isochrone ellipses on the UI.
+            PlumeAngleDegrees = Math.Max(90.0, 120.0 - (windSpeedKmH * 0.5)), 
             MaxSpreadDistance15MinMeters = Math.Round(forwardRos * 15.0, 1)
         };
 
